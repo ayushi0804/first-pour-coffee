@@ -1,0 +1,18 @@
+{# progress tracker for the customer; expects tracker, step, o #}
+{% if o.status == 'cancelled' %}
+  <p class="cancel-note"><strong>This order was cancelled.</strong>
+    {% if o.cancel_reason %}{{ o.cancel_reason }}{% endif %}
+    {% if o.refund_status == 'refunded' %}Your payment has been refunded.
+    {% elif o.refund_status in ('pending', 'failed') %}Your refund is being processed.{% endif %}
+  </p>
+{% else %}
+  <ol class="tracker" aria-label="Order progress">
+    {% for s in tracker %}
+      {% set i = loop.index0 %}
+      <li class="{% if i < step %}done{% elif i == step %}current{% endif %}">
+        <span class="dot">{% if i < step or (i == step and s in ('paid', 'shipped', 'delivered')) %}✓{% else %}{{ loop.index }}{% endif %}</span>
+        <span class="step-name">{{ {'pending': 'Order placed', 'paid': 'Paid', 'shipped': 'Shipped', 'delivered': 'Delivered'}[s] }}</span>
+      </li>
+    {% endfor %}
+  </ol>
+{% endif %}

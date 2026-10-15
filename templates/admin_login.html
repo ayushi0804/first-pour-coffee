@@ -1,0 +1,20 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin sign in · First Pour Coffee Co.{% endblock %}
+{% block content %}
+<div class="login-box">
+  <h1>Admin sign in</h1>
+  {% if disabled %}
+    <p class="muted">The admin area is switched off because no password is set.
+       Copy <code>.env.example</code> to <code>.env</code>, set <code>ADMIN_PASSWORD</code>, and restart the app.</p>
+  {% else %}
+    <form method="post" class="checkout">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required></div>
+      <div class="field"><label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required></div>
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

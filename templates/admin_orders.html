@@ -1,0 +1,59 @@
+{% extends "admin_base.html" %}
+{% block title %}Orders · First Pour Admin{% endblock %}
+{% block content %}
+<h1 class="page-title">Orders</h1>
+
+<div class="stat-row">
+  <div class="stat"><span class="stat-n">{{ stats.today }}</span><span class="stat-l">Orders today</span></div>
+  <div class="stat"><span class="stat-n">{{ stats.to_ship }}</span><span class="stat-l">Paid, ready to ship</span></div>
+  <div class="stat"><span class="stat-n">{{ stats.counts.pending }}</span><span class="stat-l">Waiting for payment</span></div>
+  <div class="stat"><span class="stat-n">{{ stats.revenue | inr }}</span><span class="stat-l">Paid revenue</span></div>
+  {% if stats.out_of_stock or stats.low_stock %}<a class="stat stat-link {% if stats.out_of_stock %}stat-warn{% endif %}" href="{{ url_for('admin.inventory', show='out' if stats.out_of_stock else 'low') }}"><span class="stat-n">{{ stats.out_of_stock + stats.low_stock }}</span><span class="stat-l">{{ stats.out_of_stock }} out, {{ stats.low_stock }} low on stock</span></a>{% endif %}
+  {% if stats.refunds_due %}<div class="stat stat-warn"><span class="stat-n">{{ stats.refunds_due }}</span><span class="stat-l">Refunds to sort out</span></div>{% endif %}
+</div>
+
+<div class="admin-tools">
+  <nav class="tabs" aria-label="Filter by status">
+    <a href="{{ url_for('admin.orders', q=q) }}" {% if not status %}aria-current="page"{% endif %}>All <sup>{{ stats.counts.values() | sum }}</sup></a>
+    {% for s in statuses %}
+      <a href="{{ url_for('admin.orders', status=s, q=q) }}" {% if status == s %}aria-current="page"{% endif %}>{{ labels[s] }} <sup>{{ stats.counts[s] }}</sup></a>
+    {% endfor %}
+  </nav>
+  <form class="admin-search" method="get">
+    {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+    <label class="sr-only" for="aq">Search orders</label>
+    <input id="aq" name="q" value="{{ q }}" placeholder="Order number, name or email">
+  </form>
+</div>
+
+{% if rows %}
+<div class="table-wrap">
+<table class="orders-table">
+  <thead><tr><th>Order</th><th>Placed</th><th>Customer</th><th class="num">Total</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="{{ url_for('admin.order', number=r.order_number) }}"><strong>{{ r.order_number }}</strong></a></td>
+      <td class="muted">{{ r.created_at[:10] }} {{ r.created_at[11:16] }}</td>
+      <td>{{ r.full_name }}<br><span class="muted">{{ r.city }}</span></td>
+      <td class="num">{{ r.total | inr2 }}</td>
+      <td>{% set status = r.status %}{% include "_badge.html" %}
+        {% if r.refund_status in ('pending', 'failed') %}<span class="status status-warn">Refund due</span>{% endif %}</td>
+      <td><a href="{{ url_for('admin.order', number=r.order_number) }}">Open</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if pages > 1 %}
+  <nav class="pager" aria-label="Pages">
+    {% for n in range(1, pages + 1) %}
+      <a href="{{ url_for('admin.orders', status=status, q=q, page=n) }}" {% if n == page %}aria-current="page"{% endif %}>{{ n }}</a>
+    {% endfor %}
+  </nav>
+{% endif %}
+{% else %}
+  <div class="empty"><h3>No orders here</h3><p>{% if q or status %}Nothing matches that filter.{% else %}Orders will show up here as soon as someone checks out.{% endif %}</p></div>
+{% endif %}
+{% endblock %}

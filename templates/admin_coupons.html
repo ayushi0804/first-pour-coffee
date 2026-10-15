@@ -1,0 +1,75 @@
+{% extends "admin_base.html" %}
+{% block title %}Coupons · First Pour Admin{% endblock %}
+
+{% macro field(name, label, type='text', attrs='') %}
+  <div class="field {% if errors.get(name) %}has-error{% endif %}">
+    <label for="{{ name }}">{{ label }}</label>
+    <input id="{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ v.get(name, '') }}" {{ attrs | safe }}>
+    {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+<h1 class="page-title">Coupons</h1>
+
+<div class="admin-grid coupons-grid">
+  <section>
+    <div class="table-wrap">
+    <table class="orders-table">
+      <thead><tr><th>Code</th><th>Offer</th><th>Valid</th><th class="num">Used</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for c in rows %}
+        <tr>
+          <td><code class="code-pill">{{ c.code }}</code>{% if c.public %}<br><span class="muted tiny">shown in cart</span>{% endif %}</td>
+          <td>{{ c.summary }}{% if c.once_per_customer %}<br><span class="muted tiny">one use per customer</span>{% endif %}</td>
+          <td class="muted tiny">{{ c.starts_on or 'any time' }} to {{ c.expires_on or 'no end' }}</td>
+          <td class="num">{{ c.used_count }}{% if c.max_uses %} / {{ c.max_uses }}{% endif %}</td>
+          <td><span class="status coupon-{{ c.state | replace(' ', '-') }}">{{ c.state | capitalize }}</span></td>
+          <td>
+            <form action="{{ url_for('admin.toggle_coupon', coupon_id=c.id) }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="link-btn" type="submit">{{ 'Switch off' if c.active else 'Switch on' }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <aside class="admin-side">
+    <div class="panel">
+      <h2>New coupon</h2>
+      <form class="checkout coupon-form" method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ field('code', 'Code', attrs='maxlength="20" placeholder="MONSOON15" required style="text-transform: uppercase"') }}
+        <div class="field {% if errors.get('kind') %}has-error{% endif %}">
+          <label for="kind">Type</label>
+          <select id="kind" name="kind">
+            <option value="percent" {% if v.get('kind') != 'flat' %}selected{% endif %}>Percentage off</option>
+            <option value="flat" {% if v.get('kind') == 'flat' %}selected{% endif %}>Flat amount off</option>
+          </select>
+          {% if errors.get('kind') %}<p class="error">{{ errors['kind'] }}</p>{% endif %}
+        </div>
+        <div class="two">
+          {{ field('value', 'Value (% or ₹)', 'number', 'min="0" step="any" required') }}
+          {{ field('max_discount', 'Max discount ₹ (% only)', 'number', 'min="0" step="any"') }}
+        </div>
+        <div class="two">
+          {{ field('min_subtotal', 'Minimum order ₹', 'number', 'min="0" step="any"') }}
+          {{ field('max_uses', 'Total uses allowed', 'number', 'min="1" step="1"') }}
+        </div>
+        <div class="two">
+          {{ field('starts_on', 'Starts', 'date') }}
+          {{ field('expires_on', 'Ends', 'date') }}
+        </div>
+        {{ field('description', 'Note (optional)', attrs='maxlength="120"') }}
+        <label class="check"><input type="checkbox" name="once_per_customer" value="1" {% if v.get('once_per_customer') %}checked{% endif %}><span>One use per customer (by email)</span></label>
+        <label class="check"><input type="checkbox" name="public" value="1" {% if v.get('public') %}checked{% endif %}><span>Show as a hint in the cart</span></label>
+        <button class="btn btn-wide" type="submit">Create coupon</button>
+      </form>
+    </div>
+  </aside>
+</div>
+{% endblock %}

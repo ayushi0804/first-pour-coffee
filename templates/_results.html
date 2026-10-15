@@ -1,0 +1,51 @@
+<section id="results" aria-live="polite">
+  <div class="toolbar">
+    <p class="count">
+      <strong>{{ total }}</strong> {{ 'product' if total == 1 else 'products' }}
+      {% if f.q %} for “{{ f.q }}”{% endif %}
+    </p>
+    <label class="sort">
+      <span>Sort by</span>
+      <select name="sort" form="filters">
+        {% for key, (label, _) in sorts.items() %}
+          <option value="{{ key }}" {% if f.sort == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+
+  {% set has_filters = f.q or f.category or f.min or f.max or f.in_stock %}
+  {% if has_filters %}
+    <ul class="chips">
+      {% if f.q %}<li><a href="{{ url_with(q='') }}" data-nav>Search: {{ f.q }} <span aria-hidden="true">×</span><span class="sr-only">remove</span></a></li>{% endif %}
+      {% if f.category %}<li><a href="{{ url_with(category='') }}" data-nav>{{ (categories | selectattr('slug', 'equalto', f.category) | list | first or {}).name or f.category }} <span aria-hidden="true">×</span><span class="sr-only">remove</span></a></li>{% endif %}
+      {% if f.min or f.max %}<li><a href="{{ url_with(min='', max='') }}" data-nav>
+        {% if f.min and f.max %}{{ currency }}{{ f.min }} to {{ currency }}{{ f.max }}{% elif f.min %}Over {{ currency }}{{ f.min }}{% else %}Under {{ currency }}{{ f.max }}{% endif %}
+        <span aria-hidden="true">×</span><span class="sr-only">remove</span></a></li>{% endif %}
+      {% if f.in_stock %}<li><a href="{{ url_with(in_stock='') }}" data-nav>In stock <span aria-hidden="true">×</span><span class="sr-only">remove</span></a></li>{% endif %}
+      <li><a class="clear" href="{{ url_for('shop') }}" data-nav>Clear all</a></li>
+    </ul>
+  {% endif %}
+
+  {% if products %}
+    <div class="grid">
+      {% for p in products %}{% include "_card.html" %}{% endfor %}
+    </div>
+
+    {% if pages > 1 %}
+      <nav class="pager" aria-label="Pages">
+        {% if page > 1 %}<a href="{{ url_with(page=page-1) }}" data-nav data-page rel="prev">Previous</a>{% endif %}
+        {% for n in range(1, pages + 1) %}
+          <a href="{{ url_with(page=n) }}" data-nav data-page {% if n == page %}aria-current="page"{% endif %}>{{ n }}</a>
+        {% endfor %}
+        {% if page < pages %}<a href="{{ url_with(page=page+1) }}" data-nav data-page rel="next">Next</a>{% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="empty">
+      <h3>Nothing matches that</h3>
+      <p>Try fewer words, widen the price range, or look at everything.</p>
+      <p><a class="btn" href="{{ url_for('shop') }}" data-nav>Show all products</a></p>
+    </div>
+  {% endif %}
+</section>

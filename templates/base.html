@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}First Pour Coffee Co.{% endblock %}</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="description" content="Brewing gear, single-origin beans and mugs. A small demo store.">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  {% block header %}
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="logo" href="{{ url_for('shop') }}">First Pour</a>
+
+      <form id="site-search" class="search" action="{{ url_for('shop') }}" method="get" role="search">
+        <label class="sr-only" for="q">Search products</label>
+        <input id="q" type="search" name="q" value="{{ f.q if f is defined else request.args.get('q', '') }}"
+               placeholder="Search kettles, Ethiopia, mugs…" autocomplete="off">
+      </form>
+
+      <a class="cart-link" href="{{ url_for('cart') }}">Cart
+        <span class="cart-count" {% if not cart_count %}hidden{% endif %}>{{ cart_count }}</span>
+      </a>
+    </div>
+  </header>
+  {% endblock %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="wrap">
+        {% for kind, msg in messages %}
+          <p class="flash flash-{{ kind }}" role="status">{{ msg }} {% if kind == 'ok' and request.endpoint not in ('cart', 'checkout') and not (request.endpoint or '').startswith('admin.') %}<a href="{{ url_for('cart') }}">View cart</a>{% endif %}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>First Pour is a demo store. Payments run in test mode, so no real money moves and nothing ships. <a href="{{ url_for('admin.login') }}">Admin</a></p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="{{ url_for('static', filename='js/cart.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

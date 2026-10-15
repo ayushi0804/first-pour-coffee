@@ -1,0 +1,8 @@
+{# totals from a saved order row `o` #}
+<dl class="totals">
+  <div><dt>Subtotal</dt><dd>{{ o.subtotal | inr2 }}</dd></div>
+  {% if o.discount %}<div class="discount"><dt>Discount ({{ o.coupon_code }})</dt><dd>−{{ o.discount | inr2 }}</dd></div>{% endif %}
+  <div><dt>Shipping</dt><dd>{% if o.shipping == 0 %}Free{% else %}{{ o.shipping | inr2 }}{% endif %}</dd></div>
+  <div><dt>GST</dt><dd>{{ o.tax | inr2 }}</dd></div>
+  <div class="grand"><dt>Total</dt><dd>{{ o.total | inr2 }}</dd></div>
+</dl>

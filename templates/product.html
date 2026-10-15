@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} · First Pour Coffee Co.{% endblock %}
+
+{% block content %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('shop') }}">Shop</a>
+  <span aria-hidden="true">/</span>
+  <a href="{{ url_for('shop', category=p.category_slug) }}">{{ p.category_name }}</a>
+</nav>
+
+<div class="detail">
+  <div class="detail-img tile">
+    <img src="{{ img_url(p.image) }}" alt="{{ p.name }}" width="600" height="600">
+  </div>
+
+  <div class="detail-info">
+    <h1>{{ p.name }}</h1>
+    <p class="rating big">★ {{ '%.1f' % p.rating }} <span class="muted">· {{ p.rating_count }} reviews</span></p>
+
+    <p class="detail-price">
+      <span class="price">{{ p.price | inr }}</span>
+      {% if p.on_sale %}<s>{{ p.compare_at | inr }}</s> <span class="badge badge-sale">{{ p.percent_off }}% off</span>{% endif %}
+    </p>
+
+    <p class="gst-note">Price excludes {{ p.tax_rate }}% GST, added at checkout.</p>
+
+    {% for para in paragraphs %}<p class="desc">{{ para }}</p>{% endfor %}
+
+    {% if p.stock == 0 %}
+      <p class="stock out">Out of stock</p>
+      <p class="muted">We don't have this one right now. Have a look at the rest of {{ p.category_name }}.</p>
+      <button class="btn btn-wide btn-off" type="button" disabled>Out of stock</button>
+    {% else %}
+      <p class="stock {% if p.stock <= 5 %}low{% endif %}">
+        {% if p.stock <= 5 %}Only {{ p.stock }} left{% else %}In stock{% endif %}
+      </p>
+      <form class="buy" action="{{ url_for('cart_add', product_id=p.id) }}" method="post" data-add>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="sr-only" for="qty">Quantity</label>
+        <input id="qty" type="number" name="qty" value="1" min="1" max="{{ [p.stock, 10] | min }}">
+        <button class="btn" type="submit">Add to cart</button>
+      </form>
+    {% endif %}
+
+    <h2 class="specs-title">Details</h2>
+    <dl class="specs">
+      {% for label, value in specs %}
+        <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </div>
+</div>
+
+{% if related %}
+<section class="related">
+  <h2>More from {{ p.category_name }}</h2>
+  <div class="grid grid-4">
+    {% for p in related %}{% include "_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

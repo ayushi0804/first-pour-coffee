@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Your cart · First Pour Coffee Co.{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Your cart</h1>
+
+{% if t.lines %}
+<div class="cart-layout">
+  <div>
+    <ul class="cart-lines">
+      {% for l in t.lines %}
+      <li>
+        <a class="tile thumb" href="{{ url_for('product', slug=l.slug) }}">
+          <img src="{{ img_url(l.image) }}" alt="" width="120" height="120">
+        </a>
+        <div class="line-info">
+          <a href="{{ url_for('product', slug=l.slug) }}"><strong>{{ l.name }}</strong></a>
+          <span class="muted">{{ l.unit_price | inr }} each · GST {{ l.tax_rate }}%</span>
+          {% if l.qty >= l.stock %}<span class="low-stock">That's the most we have</span>{% endif %}
+          <form action="{{ url_for('cart_remove', product_id=l.product_id) }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="link-btn" type="submit">Remove</button>
+          </form>
+        </div>
+
+        <form action="{{ url_for('cart_update', product_id=l.product_id) }}" method="post" class="qty-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="stepper">
+            <button type="button" data-step="-1" aria-label="One less {{ l.name }}">−</button>
+            <input id="qty-{{ l.product_id }}" type="number" name="qty" value="{{ l.qty }}" min="0" max="{{ l.stock }}"
+                   aria-label="Quantity of {{ l.name }}">
+            <button type="button" data-step="1" aria-label="One more {{ l.name }}">+</button>
+          </div>
+          <noscript><button class="link-btn" type="submit">Update</button></noscript>
+        </form>
+        <p class="line-total price">{{ l.line_total | inr2 }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <form action="{{ url_for('cart_clear') }}" method="post" class="clear-cart">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="link-btn" type="submit">Clear cart</button>
+      <span class="muted">·</span>
+      <a href="{{ url_for('shop') }}">Keep shopping</a>
+    </form>
+  </div>
+
+  <aside class="summary">
+    <h2>Order summary</h2>
+
+    {% if t.free_shipping_gap %}
+      <div class="ship-progress">
+        <p>Add <strong>{{ t.free_shipping_gap | inr }}</strong> more for free shipping</p>
+        <div class="bar-track"><div class="bar-fill" style="width: {{ t.free_shipping_progress }}%"></div></div>
+      </div>
+    {% else %}
+      <p class="ship-done">You've got free shipping.</p>
+    {% endif %}
+
+    {% include "_summary.html" %}
+
+    {% if t.coupon_code %}
+      <form class="coupon" action="{{ url_for('cart_coupon') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p><strong>{{ t.coupon_code }}</strong> applied</p>
+        <button class="link-btn" type="submit" name="remove" value="1">Remove</button>
+      </form>
+    {% else %}
+      <form class="coupon" action="{{ url_for('cart_coupon') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="sr-only" for="code">Coupon code</label>
+        <input id="code" name="code" placeholder="Coupon code" autocomplete="off">
+        <button class="btn btn-ghost" type="submit">Apply</button>
+      </form>
+      {% if hints %}
+        <ul class="hints">
+          {% for h in hints %}<li><code>{{ h.code }}</code> <span class="muted">{{ describe(h) }}</span></li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% endif %}
+
+    <a class="btn btn-wide" href="{{ url_for('checkout') }}">Go to checkout</a>
+  </aside>
+</div>
+{% else %}
+  <div class="empty">
+    <h3>Your cart is empty</h3>
+    <p>Pick up a bag of beans and we'll start there.</p>
+    <p><a class="btn" href="{{ url_for('shop', category='beans') }}">Browse beans</a></p>
+  </div>
+{% endif %}
+{% endblock %}

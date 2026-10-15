@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Pay for order {{ o.order_number }} · First Pour Coffee Co.{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Complete your payment</h1>
+
+<div class="cart-layout">
+  <div class="pay-main">
+    <p class="test-banner">TEST MODE · no real money is taken</p>
+
+    <p class="pay-amount">{{ o.total | inr2 }}</p>
+    <p class="muted">Order <strong>{{ o.order_number }}</strong>. We're holding your items for you
+      <span id="countdown" data-expires="{{ o.expires_at }}"></span>.</p>
+
+    <p id="pay-error" class="pay-error" role="alert" hidden></p>
+
+    {% if gateway == 'razorpay' %}
+      <button id="pay-button" class="btn btn-wide" type="button">Pay {{ o.total | inr2 }} with Razorpay</button>
+
+      <div class="test-box">
+        <h2>Test payment details</h2>
+        <ul>
+          <li><strong>Card:</strong> 4111 1111 1111 1111, any future expiry, any CVV</li>
+          <li><strong>UPI (success):</strong> <code>success@razorpay</code></li>
+          <li><strong>UPI (failure):</strong> <code>failure@razorpay</code></li>
+          <li><strong>Net banking / wallet:</strong> pick any, then choose Success or Failure on the mock page</li>
+        </ul>
+        <p class="muted">From Razorpay's test-mode docs. These only work with test API keys.</p>
+      </div>
+
+      <script id="pay-config" type="application/json">{{ {'cfg': cfg, 'number': o.order_number, 'name': o.full_name, 'email': o.email, 'phone': o.phone, 'verify': url_for('pay.verify', number=o.order_number), 'failed': url_for('pay.failed', number=o.order_number)} | tojson }}</script>
+      <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+      <script src="{{ url_for('static', filename='js/pay.js') }}"></script>
+    {% else %}
+      <div class="test-box mock-box">
+        <h2>Local payment simulator</h2>
+        <p class="muted">No Razorpay keys are set, so this is a stand-in for the Razorpay window.
+          Add test keys to <code>.env</code> to use the real thing.</p>
+        <form method="post" action="{{ url_for('pay.mock_pay', number=o.order_number) }}" class="mock-actions">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn" type="submit" name="outcome" value="success">Pay with test card 4111 1111 1111 1111</button>
+          <button class="btn btn-ghost" type="submit" name="outcome" value="fail">Simulate a failed payment</button>
+        </form>
+      </div>
+      <script src="{{ url_for('static', filename='js/pay.js') }}"></script>
+    {% endif %}
+
+    {% if can_cancel %}
+      <form action="{{ url_for('pay.cancel', number=o.order_number) }}" method="post" class="cancel-order">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="link-btn" type="submit">Cancel this order</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <aside class="summary">
+    <h2>Your order</h2>
+    <ul class="mini-lines">
+      {% for it in items %}
+        <li>
+          <div class="tile thumb"><img src="{{ img_url(it.image) }}" alt="" width="64" height="64"><span class="qty-pill">{{ it.qty }}</span></div>
+          <span>{{ it.name }}</span>
+          <span class="price">{{ it.line_total | inr2 }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    {% include "_order_totals.html" %}
+    <p class="muted">Ship to {{ o.full_name }}, {{ o.city }} {{ o.pincode }}</p>
+  </aside>
+</div>
+{% endblock %}

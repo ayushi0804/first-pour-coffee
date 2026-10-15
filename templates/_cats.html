@@ -1,0 +1,10 @@
+<nav id="cats" class="cat-index" aria-label="Categories">
+  <a href="{{ url_with(category='') }}" data-nav {% if not f.category %}aria-current="page"{% endif %}>
+    All products <sup>{{ categories | sum(attribute='n') }}</sup>
+  </a>
+  {% for c in categories %}
+    <a href="{{ url_with(category=c.slug) }}" data-nav {% if f.category == c.slug %}aria-current="page"{% endif %}>
+      {{ c.name }} <sup>{{ c.n }}</sup>
+    </a>
+  {% endfor %}
+</nav>

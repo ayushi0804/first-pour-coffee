@@ -1,0 +1,51 @@
+{% extends "admin_base.html" %}
+{% block title %}Inventory · First Pour Admin{% endblock %}
+{% block content %}
+<h1 class="page-title">Inventory</h1>
+
+<div class="admin-tools">
+  <nav class="tabs" aria-label="Filter by stock level">
+    <a href="{{ url_for('admin.inventory', q=q) }}" {% if not show %}aria-current="page"{% endif %}>All <sup>{{ total }}</sup></a>
+    <a href="{{ url_for('admin.inventory', show='low', q=q) }}" {% if show == 'low' %}aria-current="page"{% endif %}>Low <sup>{{ n_low }}</sup></a>
+    <a href="{{ url_for('admin.inventory', show='out', q=q) }}" {% if show == 'out' %}aria-current="page"{% endif %}>Out of stock <sup>{{ n_out }}</sup></a>
+  </nav>
+  <form class="admin-search" method="get">
+    {% if show %}<input type="hidden" name="show" value="{{ show }}">{% endif %}
+    <label class="sr-only" for="iq">Search products</label>
+    <input id="iq" name="q" value="{{ q }}" placeholder="Search products">
+  </form>
+</div>
+<p class="muted inv-note">Stock drops when an order is placed and comes back if the order is cancelled or never paid. "Low" means {{ low }} or fewer.</p>
+
+{% if rows %}
+<div class="table-wrap">
+<table class="orders-table inv-table">
+  <thead><tr><th>Product</th><th>Category</th><th class="num">Price</th><th class="num">In stock</th><th>Status</th><th>Adjust stock</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="{{ url_for('admin.product_stock', slug=r.slug) }}"><strong>{{ r.name }}</strong></a></td>
+      <td class="muted">{{ r.category_name }}</td>
+      <td class="num">{{ r.price | inr }}</td>
+      <td class="num"><strong>{{ r.stock }}</strong></td>
+      <td>{% if r.stock == 0 %}<span class="status status-out">Out of stock</span>
+          {% elif r.stock <= low %}<span class="status status-low">Low</span>
+          {% else %}<span class="status status-delivered">In stock</span>{% endif %}</td>
+      <td>
+        <form class="adjust" action="{{ url_for('admin.adjust', slug=r.slug) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="sr-only" for="d-{{ r.id }}">Change for {{ r.name }}</label>
+          <input id="d-{{ r.id }}" name="delta" type="number" step="1" placeholder="e.g. +10" required>
+          <input name="reason" placeholder="Reason" maxlength="120" aria-label="Reason">
+          <button class="btn btn-ghost" type="submit">Save</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+  <div class="empty"><h3>Nothing here</h3><p>No products match that filter.</p></div>
+{% endif %}
+{% endblock %}

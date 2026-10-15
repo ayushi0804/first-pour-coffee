@@ -1,0 +1,23 @@
+# Run the whole store with:  docker compose up --build
+# Then open http://localhost:5000  (admin at /admin)
+#
+# Settings come from your shell or from a .env file next to this one. The defaults below are
+# for a local demo only. Set your own ADMIN_PASSWORD and SECRET_KEY if anyone else can reach it.
+services:
+  web:
+    build: .
+    ports:
+      - "5000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-local-demo-secret-change-me}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin-demo-1234}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+    volumes:
+      - firstpour-data:/app/instance
+    restart: unless-stopped
+
+volumes:
+  firstpour-data:

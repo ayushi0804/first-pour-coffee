@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block header %}
+<header class="site-header admin-header">
+  <div class="wrap bar">
+    <a class="logo" href="{{ url_for('admin.orders') }}">First Pour <span class="admin-tag">Admin</span></a>
+    <nav class="admin-nav">
+      {% if session.get('admin') %}
+        <a href="{{ url_for('admin.orders') }}">Orders</a>
+        <a href="{{ url_for('admin.inventory') }}">Inventory</a>
+        <a href="{{ url_for('admin.coupons') }}">Coupons</a>
+        <a href="{{ url_for('shop') }}">View store</a>
+        <form action="{{ url_for('admin.logout') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="link-btn" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('shop') }}">Back to store</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+{% endblock %}

@@ -1,0 +1,30 @@
+{# one product card; `p` comes from card_dict() #}
+<article class="card">
+  <a class="card-link" href="{{ url_for('product', slug=p.slug) }}">
+    <div class="tile">
+      <img src="{{ img_url(p.image) }}"
+           alt="{{ p.name }}" width="600" height="600" loading="lazy">
+      <div class="badges">
+        {% if p.stock == 0 %}<span class="badge badge-out">Out of stock</span>
+        {% elif p.on_sale %}<span class="badge badge-sale">{{ p.percent_off }}% off</span>
+        {% elif p.is_new %}<span class="badge badge-new">New</span>{% endif %}
+      </div>
+    </div>
+    <p class="card-cat">{{ p.category_name }}</p>
+    <h3 class="card-name">{{ p.name }}</h3>
+    <p class="card-summary">{{ p.summary }}</p>
+  </a>
+  <p class="card-foot">
+    <span class="price">{{ p.price | inr }}{% if p.on_sale %} <s>{{ p.compare_at | inr }}</s>{% endif %}</span>
+    <span class="rating" title="{{ p.rating }} out of 5 from {{ p.rating_count }} reviews">★ {{ '%.1f' % p.rating }} <span class="muted">({{ p.rating_count }})</span></span>
+  </p>
+  {% if 0 < p.stock <= 5 %}<p class="low-stock">Only {{ p.stock }} left</p>{% endif %}
+  {% if p.stock == 0 %}
+    <div class="card-add"><button type="button" disabled>Out of stock</button></div>
+  {% elif p.stock > 0 %}
+    <form class="card-add" action="{{ url_for('cart_add', product_id=p.id) }}" method="post" data-add>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit">Add to cart</button>
+    </form>
+  {% endif %}
+</article>

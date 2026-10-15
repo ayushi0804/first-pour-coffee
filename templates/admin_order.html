@@ -1,0 +1,105 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ o.order_number }} · First Pour Admin{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('admin.orders') }}">Orders</a> <span aria-hidden="true">/</span> {{ o.order_number }}</p>
+
+<div class="admin-head">
+  <h1>{{ o.order_number }}</h1>
+  {% set status = o.status %}{% include "_badge.html" %}
+  {% if o.refund_status != 'none' %}<span class="status {% if o.refund_status == 'refunded' %}status-delivered{% else %}status-warn{% endif %}">Refund {{ o.refund_status }}</span>{% endif %}
+</div>
+
+<div class="admin-grid">
+  <section>
+    <h2>Items</h2>
+    <ul class="mini-lines receipt">
+      {% for it in items %}
+        <li>
+          <div class="tile thumb"><img src="{{ img_url(it.image) }}" alt="" width="64" height="64"><span class="qty-pill">{{ it.qty }}</span></div>
+          <span>{{ it.name }}<br><span class="muted">{{ it.unit_price | inr2 }} each · GST {{ it.tax_rate }}%</span></span>
+          <span class="price">{{ it.line_total | inr2 }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    {% include "_order_totals.html" %}
+
+    <h2 class="gap-top">History</h2>
+    <ol class="event-log">
+      {% for e in events|reverse %}
+        <li>
+          <span class="event-time">{{ e.created_at[5:10] }} {{ e.created_at[11:19] }}</span>
+          <span class="event-actor">{{ e.actor }}</span>
+          <span>{{ e.note }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <aside class="admin-side">
+    <div class="panel">
+      <h2>Update status</h2>
+      {% if next_steps %}
+        {% if 'shipped' in next_steps %}
+        <form action="{{ url_for('admin.change_status', number=o.order_number) }}" method="post" class="action-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="to" value="shipped">
+          <div class="field"><label for="carrier">Carrier</label>
+            <select id="carrier" name="carrier">{% for c in carriers %}<option>{{ c }}</option>{% endfor %}</select></div>
+          <div class="field"><label for="tracking">Tracking number (optional)</label>
+            <input id="tracking" name="tracking" maxlength="60"></div>
+          <button class="btn btn-wide" type="submit">Mark as shipped</button>
+        </form>
+        {% endif %}
+        {% if 'delivered' in next_steps %}
+        <form action="{{ url_for('admin.change_status', number=o.order_number) }}" method="post" class="action-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="to" value="delivered">
+          <button class="btn btn-wide" type="submit">Mark as delivered</button>
+        </form>
+        {% endif %}
+        {% if 'cancelled' in next_steps %}
+        <form action="{{ url_for('admin.change_status', number=o.order_number) }}" method="post" class="action-form danger"
+              onsubmit="return confirm('Cancel this order? Stock is returned{% if o.status == 'paid' %} and the payment is refunded{% endif %}.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="to" value="cancelled">
+          <div class="field"><label for="reason">Reason</label><input id="reason" name="reason" maxlength="200"></div>
+          <button class="btn btn-ghost btn-wide" type="submit">Cancel{% if o.status == 'paid' %} and refund{% endif %} order</button>
+        </form>
+        {% endif %}
+      {% else %}
+        <p class="muted">This order is {{ labels[o.status].lower() }}, so there is nothing more to do.</p>
+      {% endif %}
+      {% if o.status == 'pending' %}<p class="muted">Pending orders turn to paid by themselves when the payment goes through.</p>{% endif %}
+    </div>
+
+    {% if o.refund_status in ('pending', 'failed') %}
+    <div class="panel panel-warn">
+      <h2>Refund needed</h2>
+      <p class="muted">{{ (o.total) | inr2 }} still has to go back to the customer.</p>
+      <form action="{{ url_for('admin.retry_refund', number=o.order_number) }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-wide" type="submit">Retry refund</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <div class="panel">
+      <h2>Customer</h2>
+      <p>{{ o.full_name }}<br><a href="mailto:{{ o.email }}">{{ o.email }}</a><br>{{ o.phone }}</p>
+      <address>{{ o.address1 }}<br>{% if o.address2 %}{{ o.address2 }}<br>{% endif %}{{ o.city }}, {{ o.state }} {{ o.pincode }}</address>
+    </div>
+
+    <div class="panel">
+      <h2>Payment</h2>
+      <dl class="kv">
+        <div><dt>Gateway</dt><dd>{{ o.gateway or '-' }}</dd></div>
+        <div><dt>Gateway order</dt><dd>{{ o.gateway_order_id or '-' }}</dd></div>
+        <div><dt>Payment</dt><dd>{{ o.payment_id or '-' }}</dd></div>
+        <div><dt>Attempts</dt><dd>{{ o.payment_attempts }}</dd></div>
+        {% if o.refund_id %}<div><dt>Refund</dt><dd>{{ o.refund_id }}</dd></div>{% endif %}
+        {% if o.carrier or o.tracking_number %}<div><dt>Shipment</dt><dd>{{ o.carrier }} {{ o.tracking_number }}</dd></div>{% endif %}
+      </dl>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong · First Pour Coffee Co.{% endblock %}
+{% block content %}
+<div class="empty">
+  <h3>Something went wrong on our side</h3>
+  <p>The error has been logged. Please try again in a moment.</p>
+  <p><a class="btn" href="{{ url_for('shop') }}">Back to the shop</a></p>
+</div>
+{% endblock %}

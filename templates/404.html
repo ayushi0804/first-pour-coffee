@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Page not found · First Pour Coffee Co.{% endblock %}
+{% block content %}
+<div class="empty">
+  <h3>We couldn't find that page</h3>
+  <p>The link may be old, or the product may have been removed.</p>
+  <p><a class="btn" href="{{ url_for('shop') }}">Back to the shop</a></p>
+</div>
+{% endblock %}

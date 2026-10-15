@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Order {{ o.order_number }} · First Pour Coffee Co.{% endblock %}
+
+{% block content %}
+<div class="confirm">
+  {% if o.status == 'pending' %}
+    <p class="confirm-tag tag-wait">Waiting for payment</p>
+    <h1>Your order is waiting for payment.</h1>
+    <p class="lead">Order <strong class="order-no">{{ o.order_number }}</strong> is held for you until
+      {{ o.expires_at[11:16] if o.expires_at else '' }}. After that the items go back on the shelf.</p>
+    <p class="confirm-actions"><a class="btn" href="{{ url_for('pay.pay_page', number=o.order_number) }}">Complete payment</a></p>
+  {% elif o.status == 'cancelled' %}
+    <p class="confirm-tag tag-cancel">Cancelled</p>
+    <h1>This order was cancelled.</h1>
+    <p class="lead">Order <strong class="order-no">{{ o.order_number }}</strong>.</p>
+  {% else %}
+    <p class="confirm-tag">{{ status_labels[o.status] }}</p>
+    <h1>{% if o.status == 'delivered' %}Delivered. Enjoy it, {{ o.full_name.split()[0] }}.{% else %}Thanks, {{ o.full_name.split()[0] }}. We've got your order.{% endif %}</h1>
+    <p class="lead">Order number <strong class="order-no">{{ o.order_number }}</strong>. Keep it handy if you need to ask about this order.
+       A confirmation would be sent to <strong>{{ o.email }}</strong> (this demo doesn't send email).</p>
+  {% endif %}
+
+  {% include "_tracker.html" %}
+
+  {% if o.status == 'shipped' and (o.carrier or o.tracking_number) %}
+    <p class="ship-info">Shipped with <strong>{{ o.carrier or 'our courier' }}</strong>{% if o.tracking_number %}, tracking number <strong>{{ o.tracking_number }}</strong>{% endif %}.</p>
+  {% endif %}
+
+  <div class="confirm-grid">
+    <section>
+      <h2>Items</h2>
+      <ul class="mini-lines receipt">
+        {% for it in items %}
+          <li>
+            <div class="tile thumb"><img src="{{ img_url(it.image) }}" alt="" width="64" height="64"><span class="qty-pill">{{ it.qty }}</span></div>
+            <span>{{ it.name }}<br><span class="muted">{{ it.unit_price | inr2 }} each · GST {{ it.tax_rate }}%</span></span>
+            <span class="price">{{ it.line_total | inr2 }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+      {% include "_order_totals.html" %}
+    </section>
+
+    <section class="details">
+      <h2>Delivery</h2>
+      {% if delivery and o.status in ('paid', 'shipped') %}<p><strong>Arrives {{ delivery }}</strong></p>{% endif %}
+      <address>
+        {{ o.full_name }}<br>
+        {{ o.address1 }}<br>
+        {% if o.address2 %}{{ o.address2 }}<br>{% endif %}
+        {{ o.city }}, {{ o.state }} {{ o.pincode }}<br>
+        {{ o.phone }}
+      </address>
+
+      <h2>Payment</h2>
+      <p>{% if o.payment_id and o.status != 'pending' %}{% if o.gateway == 'razorpay' %}Paid with Razorpay (test mode){% else %}Paid (test payment){% endif %}<br><span class="muted">Payment {{ o.payment_id }}</span>{% else %}Not paid yet{% endif %}</p>
+
+      <h2>Placed</h2>
+      <p>{{ placed.strftime('%d %b %Y, %I:%M %p').lstrip('0') }}</p>
+
+      {% if events %}
+        <h2>History</h2>
+        <ul class="history">
+          {% for e in events %}<li><span class="muted">{{ e.created_at[5:16].replace('T', ' ') }}</span> {{ e.note }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  </div>
+
+  <p class="confirm-actions">
+    <a class="btn {% if o.status == 'pending' %}btn-ghost{% endif %}" href="{{ url_for('shop') }}">Continue shopping</a>
+    <button class="btn btn-ghost" type="button" onclick="window.print()">Print receipt</button>
+  </p>
+</div>
+{% endblock %}

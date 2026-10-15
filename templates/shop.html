@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{% if f.category %}{{ (categories | selectattr('slug', 'equalto', f.category) | list | first or {}).name }} · {% endif %}First Pour Coffee Co.{% endblock %}
+
+{% block content %}
+<div class="shop">
+  <aside class="sidebar">
+    {% include "_cats.html" %}
+
+    <form id="filters" class="filters" action="{{ url_for('shop') }}" method="get">
+      <input type="hidden" name="q" value="{{ f.q }}">
+      <input type="hidden" name="category" value="{{ f.category }}">
+
+      <fieldset>
+        <legend>Price ({{ currency }})</legend>
+        <div class="range">
+          <label class="sr-only" for="min">Minimum price</label>
+          <input id="min" name="min" type="number" inputmode="numeric" min="0" step="50"
+                 placeholder="{{ price_lo }}" value="{{ f.min }}">
+          <span aria-hidden="true">to</span>
+          <label class="sr-only" for="max">Maximum price</label>
+          <input id="max" name="max" type="number" inputmode="numeric" min="0" step="50"
+                 placeholder="{{ price_hi }}" value="{{ f.max }}">
+        </div>
+        <div class="presets">
+          <button type="button" data-min="" data-max="1000">Under {{ currency }}1,000</button>
+          <button type="button" data-min="1000" data-max="3000">{{ currency }}1,000 to {{ currency }}3,000</button>
+          <button type="button" data-min="3000" data-max="">Over {{ currency }}3,000</button>
+        </div>
+      </fieldset>
+
+      <label class="check">
+        <input type="checkbox" name="in_stock" value="1" {% if f.in_stock %}checked{% endif %}>
+        <span>In stock only</span>
+      </label>
+
+      <noscript><button class="btn" type="submit">Apply filters</button></noscript>
+    </form>
+  </aside>
+
+  <div class="listing">
+    {% include "_results.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/shop.js') }}" defer></script>
+{% endblock %}

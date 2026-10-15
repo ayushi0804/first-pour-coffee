@@ -1,0 +1,53 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ p.name }} stock · First Pour Admin{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('admin.inventory') }}">Inventory</a> <span aria-hidden="true">/</span> {{ p.name }}</p>
+<div class="admin-head">
+  <h1>{{ p.name }}</h1>
+  {% if p.stock == 0 %}<span class="status status-out">Out of stock</span>
+  {% elif p.stock <= low %}<span class="status status-low">Low</span>
+  {% else %}<span class="status status-delivered">In stock</span>{% endif %}
+</div>
+
+<div class="admin-grid">
+  <section>
+    <h2>Stock history</h2>
+    {% if moves %}
+    <div class="table-wrap">
+    <table class="orders-table">
+      <thead><tr><th>When</th><th class="num">Change</th><th class="num">After</th><th>Why</th><th>By</th></tr></thead>
+      <tbody>
+        {% for m in moves %}
+        <tr>
+          <td class="muted">{{ m.created_at[:10] }} {{ m.created_at[11:16] }}</td>
+          <td class="num"><strong class="{{ 'delta-up' if m.delta > 0 else 'delta-down' }}">{{ '+' if m.delta > 0 }}{{ m.delta }}</strong></td>
+          <td class="num">{{ m.stock_after }}</td>
+          <td>{% if m.order_number %}<a href="{{ url_for('admin.order', number=m.order_number) }}">{{ m.reason }}</a>{% else %}{{ m.reason or m.kind }}{% endif %}</td>
+          <td class="muted">{{ m.actor }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+      <p class="muted">No stock changes recorded yet. Orders and adjustments will show up here.</p>
+    {% endif %}
+  </section>
+
+  <aside class="admin-side">
+    <div class="panel">
+      <h2>Current stock: {{ p.stock }}</h2>
+      <form class="action-form" action="{{ url_for('admin.adjust', slug=p.slug) }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="back" value="detail">
+        <div class="field"><label for="delta">Change (use a minus to remove)</label>
+          <input id="delta" name="delta" type="number" step="1" placeholder="+24" required></div>
+        <div class="field"><label for="reason">Reason</label>
+          <input id="reason" name="reason" maxlength="120" placeholder="Delivery from roaster"></div>
+        <button class="btn btn-wide" type="submit">Save stock change</button>
+      </form>
+    </div>
+    <p><a href="{{ url_for('product', slug=p.slug) }}">View on the store</a></p>
+  </aside>
+</div>
+{% endblock %}
